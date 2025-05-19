@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>STIIIZY Map – Custom Label Positions</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 10px;
+      background: #121212;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 90vh;
+    }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #00ccff;
+      text-shadow: 0 0 10px rgba(0, 204, 255, 0.5);
+      font-size: 2.5rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    #map {
+      width: 375px;
+      height: 500px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.66);
+      position: relative;
+    }
+    .chart-container {
+      width: 795px;
+      height: 495px;
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-title {
+      color: #00ccff;
+      text-align: center;
+      margin-bottom: 2px;
+      font-size: 1.2rem;
+    }
+    .label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.74);
+      color: #bfefff;
+      padding: 1px 5px;
+      font-size: 11px;
+      border-radius: 8px;
+      pointer-events: none;
+      white-space: nowrap;
+      font-family: 'Segoe UI';
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 4px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      border-radius: 2px;
+    }
+    canvas#salesChart {
+      flex: auto;
+    }
+    .stats-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .stats-box {
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      padding: 15px;
+      width: 100%;
+    }
+    .stats-title {
+      color: #00ccff;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      color: white;
+    }
+    .stats-table th, .stats-table td {
+      padding: 8px;
+      text-align: right;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .stats-table th:first-child, .stats-table td:first-child {
+      text-align: left;
+    }
+    .stats-table th {
+      color: #00ccff;
+      font-weight: normal;
+    }
+    .positive-change {
+      color: #4CAF50;
+    }
+    .negative-change {
+      color: #F44336;
+    }
+    /* Payroll Cost Optimization Section */
+    .payroll-section {
+      margin-top: 40px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .payroll-row {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .funnel-container {
+      width: 500px;
+      height: 320px;
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .funnel-segment {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+      color: white;
+      font-weight: bold;
+      height: 60px;
+      text-align: center;
+      border-radius: 5px;
+      position: relative;
+    }
+    .funnel-label {
+      z-index: 2;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    }
+    .funnel-value {
+      position: absolute;
+      right: 15px;
+      font-size: 1.2rem;
+      z-index: 2;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    }
+    .funnel-period {
+      position: absolute;
+      left: 15px;
+      font-size: 1.2rem;
+      z-index: 2;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    }
+    .projects-container {
+      width: calc(100% - 540px);
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+      padding: 20px;
+    }
+    .projects-title {
+      color: #00ccff;
+      font-size: 1.6rem;
+      font-weight: bold;
+      margin-bottom: 25px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .projects-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .projects-list li {
+      margin-bottom: 25px;
+      font-size: 1.3rem;
+      display: flex;
+    }
+    .projects-list li span.number {
+      color: #00ccff;
+      margin-right: 15px;
+      font-weight: bold;
+      font-size: 1.4rem;
+    }
+    .heatmap-container {
+      width: 100%;
+      max-width: 1200px;
+      height: 500px;
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+      margin-bottom: 40px;
+    }
+    .heatmap-title {
+      color: #00ccff;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .heatmap {
+      display: grid;
+      grid-template-columns: 80px repeat(26, 1fr);
+      grid-template-rows: auto repeat(7, 1fr);
+      gap: 1px;
+      width: 100%;
+      height: 400px;
+    }
+    .heatmap-cell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 11px;
+      color: white;
+      font-weight: bold;
+      position: relative;
+    }
+    .heatmap-header {
+      font-size: 9px;
+      color: #bfefff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transform: rotate(-45deg);
+      height: 40px;
+      white-space: nowrap;
+    }
+    .heatmap-row-header {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 12px;
+      color: #00ccff;
+    }
+    .heatmap-legend {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .heatmap-legend-gradient {
+      width: 200px;
+      height: 15px;
+      background: linear-gradient(90deg, #1a1a40 0%, #4b0082 25%, #800080 50%, #ffa500 75%, #ffff00 100%);
+      margin-right: 10px;
+      border-radius: 3px;
+    }
+    .heatmap-legend-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 200px;
+      font-size: 10px;
+      color: #bfefff;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      white-space: nowrap;
+      border: 1px solid #00ccff;
+    }
+    .retail-data {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.66);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
+      padding: 15px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    .retail-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      color: white;
+      background-color: rgba(50, 50, 50, 0.5);
+    }
+    .retail-data-table th, .retail-data-table td {
+      padding: 10px;
+      text-align: right;
+      border: 1px solid rgba(0, 204, 255, 0.3);
+    }
+    .retail-data-table th:first-child, .retail-data-table td:first-child {
+      text-align: left;
+    }
+    .retail-data-table th {
+      background-color: rgba(0, 204, 255, 0.2);
+      color: #00ccff;
+    }
+    .funnel-container-header {
+      color: #00ccff;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+      letter-spacing: 1px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 10px 10px 0 0;
+      width: 100%;
+    }
+    @media (max-width: 1200px) {
+      .payroll-row {
+        flex-direction: column;
+        align-items: center;
+      }
+      .funnel-container, .projects-container {
+        width: 95%;
+        margin-bottom: 20px;
+      }
+      .heatmap {
+        overflow-x: auto;
+      }
+    }
+    @media (max-width: 600px) {
+      .funnel-container, .projects-container {
+        width: 98vw;
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1 class="header">STIIIZY RETAIL 2025</h1>
+
+  <div class="dashboard">
+    <div id="map"></div>
+    <div class="chart-container">
+      <div class="chart-title">Monthly Performance (Jan 2024 - May 2025)</div>
+      <canvas id="salesChart"></canvas>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: rgba(0, 204, 255, 0.7);"></div>
+          <span>Daily Sales Average ($)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: rgba(255, 99, 132, 0.7);"></div>
+          <span>Daily Average Transactions</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="retail-data">
+    <table class="retail-data-table">
+      <thead>
+        <tr>
+          <th>CA Retail Only</th>
+          <th>Jan-24</th>
+          <th>Aug-24</th>
+          <th>May-25</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>TOTAL SALES</td>
+          <td>805,520</td>
+          <td>841,592</td>
+          <td>1,023,274</td>
+        </tr>
+        <tr>
+          <td>In House</td>
+          <td>668,370</td>
+          <td>678,076</td>
+          <td>724,080</td>
+        </tr>
+        <tr>
+          <td>3rd Party</td>
+          <td>137,150</td>
+          <td>163,516</td>
+          <td>299,194</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stats-container">
+    <div class="stats-box">
+      <div class="stats-title">CA Retail Performance Growth (DAILY)</div>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Jan-24</th>
+            <th>Aug-24</th>
+            <th>May-25</th>
+            <th>% Change<br>(May-25 vs Aug-24)</th>
+            <th>% Change<br>(May-25 vs Jan-24)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>TOTAL SALES</td>
+            <td>$805,520</td>
+            <td>$841,592</td>
+            <td>$1,023,274</td>
+            <td class="positive-change">+21.6%</td>
+            <td class="positive-change">+27.0%</td>
+          </tr>
+          <tr>
+            <td>In House</td>
+            <td>$668,370</td>
+            <td>$678,076</td>
+            <td>$724,080</td>
+            <td class="positive-change">+6.8%</td>
+            <td class="positive-change">+8.3%</td>
+          </tr>
+          <tr>
+            <td>3rd Party</td>
+            <td>$137,150</td>
+            <td>$163,516</td>
+            <td>$299,194</td>
+            <td class="positive-change">+83.0%</td>
+            <td class="positive-change">+118.2%</td>
+          </tr>
+          <tr>
+            <td>Daily Transactions</td>
+            <td>15,532</td>
+            <td>19,755</td>
+            <td>24,100</td>
+            <td class="positive-change">+22.0%</td>
+            <td class="positive-change">+55.2%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payroll Cost Optimization Section with header inside the funnel container -->
+  <div class="payroll-section">
+    <div class="payroll-row">
+      <div class="funnel-container">
+        <div class="funnel-container-header">Payroll Cost Optimization Starting 2025</div>
+        <div class="funnel-segment" style="width: 98%; background: linear-gradient(90deg, rgba(0,204,255,0.8) 0%, rgba(0,255,204,0.8) 100%);">
+          <span class="funnel-period">Aug24-Oct24</span>
+          <span class="funnel-label">Payroll to Sales Ratio</span>
+          <span class="funnel-value">9.8%</span>
+        </div>
+        <div class="funnel-segment" style="width: 99%; background: linear-gradient(90deg, rgba(0,204,255,0.8) 0%, rgba(0,255,204,0.8) 100%);">
+          <span class="funnel-period">Nov24-Jan25</span>
+          <span class="funnel-label">Payroll to Sales Ratio</span>
+          <span class="funnel-value">9.9%</span>
+        </div>
+        <div class="funnel-segment" style="width: 93%; background: linear-gradient(90deg, rgba(0,204,255,0.8) 0%, rgba(0,255,204,0.8) 100%);">
+          <span class="funnel-period">Feb25-Apr25</span>
+          <span class="funnel-label">Payroll to Sales Ratio</span>
+          <span class="funnel-value">9.3%</span>
+        </div>
+      </div>
+
+      <div class="projects-container">
+        <div class="projects-title">Upcoming 2025 Retail Projects</div>
+        <ul class="projects-list">
+          <li><span class="number">1)</span> Omni green implementation & full integration between delivery and retail</li>
+          <li><span class="number">2)</span> Electronic Shelf Labeling System</li>
+          <li><span class="number">3)</span> All new customer facing UI, showcasing all Products.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- DSA Heatmap Section -->
+  <div class="heatmap-container">
+    <div class="heatmap-title">Recommended # of DSAs - Rounded (30-min intervals)</div>
+    <div class="heatmap" id="dsaHeatmap">
+      <!-- Headers and cells will be added by JavaScript -->
+    </div>
+    <div class="heatmap-legend">
+      <div class="heatmap-legend-gradient"></div>
+      <div class="heatmap-legend-labels">
+        <span>7</span>
+        <span>9</span>
+        <span>11</span>
+        <span>13</span>
+      </div>
+    </div>
+    <div id="tooltip" class="tooltip"></div>
+  </div>
+</div>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1Ijoia2V2aW4ta3VobiIsImEiOiJjbWFzejVoaDgwOHE5MmlxMTdtamRuNGF4In0.JgErciHC6WvvMZL9UMJScg';
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/navigation-night-v1',
+    center: [-120.7, 36.85],
+    zoom: 5.1
+  });
+
+  const stores = [
+    {
+      id: 1,
+      title: "#1 STIIIZY Torrance",
+      address: "1513 Sepulveda Blvd, Torrance, CA 90501",
+      opening: "5/17/2025",
+      coords: [-118.2890, 33.8285]
+    },
+    {
+      id: 2,
+      title: "#2 STIIIZY Madera",
+      address: "1105 Country Club Dr, Madera, CA 93638",
+      opening: "5/19/2025",
+      coords: [-120.0680, 36.9612]
+    },
+    {
+      id: 3,
+      title: "#3 STIIIZY Tracy",
+      address: "775 W Clover Rd, Tracy, CA 95376",
+      opening: "6/16/2025",
+      coords: [-121.4386, 37.7455]
+    },
+    {
+      id: 4,
+      title: "#4 STIIIZY Concord",
+      address: "1045 Galaxy Way, Concord, CA 94520",
+      opening: "7/7/2025",
+      coords: [-122.0561, 37.9715]
+    },
+    {
+      id: 5,
+      title: "#5 STIIIZY Sacramento",
+      address: "4080 24th St, Sacramento, CA 95822",
+      opening: "7/21/2025",
+      coords: [-121.4700, 38.5264]
+    }
+  ];
+
+  stores.forEach(store => {
+    // Marker element
+    const el = document.createElement('div');
+    el.style.background = 'rgba(0, 204, 255, 0.66)';
+    el.style.width = '16px';
+    el.style.height = '16px';
+    el.style.borderRadius = '50%';
+    el.style.border = '2px solid white';
+    el.style.cursor = 'pointer';
+
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat(store.coords)
+      .addTo(map);
+
+    // Popup on click with full info
+    const popup = new mapboxgl.Popup({ offset: 25 })
+      .setLngLat(store.coords)
+      .setHTML(`<strong>${store.title}</strong><br>${store.address}<br><em>Opens: ${store.opening}</em>`);
+
+    marker.getElement().addEventListener('click', () => {
+      popup.addTo(map);
+    });
+
+    // Floating label
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.innerHTML = `<strong>${store.title}</strong><br><em>Opens: ${store.opening}</em>`;
+    document.getElementById('map').appendChild(label);
+
+    function positionLabel() {
+      const pos = map.project(store.coords);
+      let x = pos.x, y = pos.y;
+
+      // Custom position logic
+      switch (store.id) {
+        case 1: x -= 137; y -= 15; break;
+        case 2: x -= 112; y += 5; break;
+        case 3: x += 12; y -= 20; break;
+        case 4: x -= 108; y -= 45; break;
+        case 5: x -= 5; y -= 63; break;
+      }
+
+      label.style.left = `${x}px`;
+      label.style.top = `${y}px`;
+    }
+
+    map.on('load', positionLabel);
+    map.on('move', positionLabel);
+    map.on('moveend', positionLabel);
+  });
+
+  // Sales data
+  const salesData = [
+    { month: 'Jan-24', sales: 860113, transactions: 15532 },
+    { month: 'Feb-24', sales: 927694, transactions: 19052 },
+    { month: 'Mar-24', sales: 955796, transactions: 19226 },
+    { month: 'Apr-24', sales: 1002959, transactions: 19100 },
+    { month: 'May-24', sales: 975108, transactions: 20999 },
+    { month: 'Jun-24', sales: 956222, transactions: 19322 },
+    { month: 'Jul-24', sales: 857618, transactions: 17692 },
+    { month: 'Aug-24', sales: 913351, transactions: 19755 },
+    { month: 'Sep-24', sales: 895791, transactions: 20327 },
+    { month: 'Oct-24', sales: 926379, transactions: 21303 },
+    { month: 'Nov-24', sales: 995807, transactions: 22161 },
+    { month: 'Dec-24', sales: 983184, transactions: 21787 },
+    { month: 'Jan-25', sales: 947810, transactions: 21883 },
+    { month: 'Feb-25', sales: 1018769, transactions: 23081 },
+    { month: 'Mar-25', sales: 1062152, transactions: 23427 },
+    { month: 'Apr-25', sales: 1082615, transactions: 23598 },
+    { month: 'May-25', sales: 1104379, transactions: 24100 }
+  ];
+
+  // DSA Heatmap data
+  const dsaData = {
+    days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    times: ['9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+            '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM',
+            '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
+            '9:00 PM', '9:30 PM'],
+    values: [
+      [7, 8, 8, 8, 8, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 9, 9, 9, 9, 9, 8], // Sunday
+      [7, 7, 7, 7, 7, 8, 8, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 8, 8, 8], // Monday - fixed by adding 8 at the end
+      [7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9], // Tuesday
+      [7, 7, 7, 7, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 9], // Wednesday
+      [7, 8, 8, 8, 8, 9, 9, 9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 10, 10, 10, 10, 10], // Thursday
+      [9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 11, 11], // Friday
+      [8, 8, 8, 9, 9, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 10, 10, 10, 10, 10]  // Saturday
+    ]
+  };
+
+  // Create main chart
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: salesData.map(d => d.month),
+        datasets: [
+          {
+            label: 'Daily Sales Average ($)',
+            data: salesData.map(d => d.sales),
+            backgroundColor: 'rgba(0, 204, 255, 0.7)',
+            borderColor: 'rgba(0, 204, 255, 1)',
+            borderWidth: 1,
+            yAxisID: 'y',
+            order: 2
+          },
+          {
+            label: 'Daily Average Transactions',
+            data: salesData.map(d => d.transactions),
+            type: 'line',
+            fill: false,
+            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            yAxisID: 'y1',
+            order: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)',
+              font: {
+                size: 10
+              },
+              maxRotation: 45,
+              minRotation: 45
+            }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Daily Sales Average ($)',
+              color: 'rgba(0, 204, 255, 0.7)',
+              font: {
+                size: 12
+              },
+              padding: {
+                top: 0,
+                bottom: 10
+              }
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)',
+              callback: function(value) {
+                return '$' + value.toLocaleString();
+              },
+              padding: 5
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Daily Average Transactions',
+              color: 'rgba(255, 99, 132, 0.7)',
+              font: {
+                size: 12
+              },
+              padding: {
+                top: 0,
+                bottom: 10
+              }
+            },
+            grid: {
+              drawOnChartArea: false
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)',
+              padding: 5
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.datasetIndex === 0) {
+                  label += '$' + context.parsed.y.toLocaleString();
+                } else {
+                  label += context.parsed.y.toLocaleString();
+                }
+                return label;
+              }
+            }
+          },
+          legend: {
+            display: false
+          }
+        },
+        layout: {
+          padding: {
+            left: 10,
+            right: 10,
+            top: 0,
+            bottom: 0
+          }
+        }
+      }
+    });
+
+    // Create DSA Heatmap
+    createHeatmap();
+  });
+
+  function createHeatmap() {
+    const heatmapContainer = document.getElementById('dsaHeatmap');
+    const tooltip = document.getElementById('tooltip');
+
+    // Clear any existing content
+    heatmapContainer.innerHTML = '';
+
+    // Add empty cell in top-left corner
+    const emptyCell = document.createElement('div');
+    emptyCell.className = 'heatmap-cell';
+    heatmapContainer.appendChild(emptyCell);
+
+    // Add time headers
+    dsaData.times.forEach(time => {
+      const header = document.createElement('div');
+      header.className = 'heatmap-header';
+      header.textContent = time;
+      heatmapContainer.appendChild(header);
+    });
+
+    // Add rows with day headers and data cells
+    dsaData.days.forEach((day, dayIndex) => {
+      // Add day header
+      const dayHeader = document.createElement('div');
+      dayHeader.className = 'heatmap-row-header';
+      dayHeader.textContent = day;
+      heatmapContainer.appendChild(dayHeader);
+
+      // Add data cells for this day
+      dsaData.values[dayIndex].forEach((value, timeIndex) => {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        cell.textContent = value || '';
+
+        // Set background color based on value
+        const minValue = 7;
+        const maxValue = 13;
+        const normalizedValue = (value - minValue) / (maxValue - minValue);
+
+        // Color gradient from dark purple to yellow
+        let cellColor;
+        if (value === 0) {
+          cellColor = 'rgba(0, 0, 0, 0.3)'; // Empty cell
+        } else if (normalizedValue <= 0.2) {
+          cellColor = '#1a1a40'; // Dark purple
+        } else if (normalizedValue <= 0.4) {
+          cellColor = '#4b0082'; // Indigo
+        } else if (normalizedValue <= 0.6) {
+          cellColor = '#800080'; // Purple
+        } else if (normalizedValue <= 0.8) {
+          cellColor = '#ffa500'; // Orange
+        } else {
+          cellColor = '#ffff00'; // Yellow
+        }
+
+        cell.style.backgroundColor = cellColor;
+
+        // Add tooltip functionality
+        cell.addEventListener('mouseover', function(e) {
+          if (value) {
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = `
+              <strong>Weekday: ${day}</strong><br>
+              Time: ${dsaData.times[timeIndex]}<br>
+              Recommended DSAs: ${value}
+            `;
+
+            // Position tooltip near the mouse but not directly under it
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY + 10) + 'px';
+
+            // Highlight the cell
+            this.style.outline = '2px solid #00ccff';
+          }
+        });
+
+        cell.addEventListener('mouseout', function() {
+          tooltip.style.display = 'none';
+          this.style.outline = 'none';
+        });
+
+        heatmapContainer.appendChild(cell);
+      });
+    });
+  }
+</script>
+</body>
+</html>
