@@ -224,11 +224,10 @@
       font-weight: bold;
       font-size: 1.4rem;
     }
-    /* MODIFIED: Heatmap container to be 70% width and centered */
+    /* MODIFIED: Heatmap container to be smaller and fit side by side with Payroll funnel */
     .heatmap-container {
-      width: 60%;
-      max-width: 800px; /* 70% of 1200px */
-      height: 400px;
+      width: calc(100% - 540px);
+      height: 320px;
       background: rgba(0, 0, 0, 0.66);
       border-radius: 10px;
       box-shadow: 0 0 15px rgba(0, 204, 255, 0.2);
@@ -236,61 +235,61 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 20px auto 40px auto; /* Center horizontally with auto margins */
     }
     .heatmap-title {
       color: #00ccff;
       font-size: 1.1rem;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       text-align: center;
     }
-    /* MODIFIED: Adjusted heatmap grid to fit better in the smaller container */
+    /* MODIFIED: Adjusted heatmap grid to fit in smaller container */
     .heatmap {
       display: grid;
-      grid-template-columns: 50px repeat(26, 1fr); /* Reduced day label width */
+      grid-template-columns: 60px repeat(26, 1fr);
       grid-template-rows: auto repeat(7, 1fr);
       gap: 1px;
       width: 100%;
-      height: 350px;
-      overflow-x: auto; /* Allow horizontal scrolling if needed */
+      height: 240px;
+      overflow-x: auto;
+      font-size: 9px;
     }
     .heatmap-cell {
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 10px; /* Slightly smaller font */
+      font-size: 9px;
       color: white;
       font-weight: bold;
       position: relative;
     }
     .heatmap-header {
-      font-size: 8px; /* Slightly smaller font */
+      font-size: 7px;
       color: #bfefff;
       display: flex;
       justify-content: center;
       align-items: center;
       transform: rotate(-45deg);
-      height: 40px;
+      height: 30px;
       white-space: nowrap;
     }
     .heatmap-row-header {
       display: flex;
       justify-content: flex-start;
       align-items: center;
-      padding-left: 5px; /* Reduced padding */
-      font-size: 11px; /* Slightly smaller font */
+      padding-left: 5px;
+      font-size: 9px;
       color: #00ccff;
     }
     .heatmap-legend {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      margin-top: 10px;
+      margin-top: 5px;
       width: 100%;
     }
     .heatmap-legend-gradient {
-      width: 200px;
-      height: 15px;
+      width: 150px;
+      height: 10px;
       background: linear-gradient(90deg, #1a1a40 0%, #4b0082 25%, #800080 50%, #ffa500 75%, #ffff00 100%);
       margin-right: 10px;
       border-radius: 3px;
@@ -298,8 +297,8 @@
     .heatmap-legend-labels {
       display: flex;
       justify-content: space-between;
-      width: 200px;
-      font-size: 10px;
+      width: 150px;
+      font-size: 8px;
       color: #bfefff;
     }
     .tooltip {
@@ -359,20 +358,16 @@
         flex-direction: column;
         align-items: center;
       }
-      .funnel-container, .projects-container {
+      .funnel-container, .projects-container, .heatmap-container {
         width: 95%;
         margin-bottom: 20px;
-      }
-      /* MODIFIED: Ensure heatmap is responsive on smaller screens */
-      .heatmap-container {
-        width: 95%;
       }
       .heatmap {
         overflow-x: auto;
       }
     }
     @media (max-width: 600px) {
-      .funnel-container, .projects-container {
+      .funnel-container, .projects-container, .heatmap-container {
         width: 98vw;
         min-width: 0;
       }
@@ -486,7 +481,7 @@
     </div>
   </div>
 
-  <!-- Payroll Cost Optimization Section with header inside the funnel container -->
+  <!-- MODIFIED: Payroll Cost Optimization Section with Heatmap side by side -->
   <div class="payroll-section">
     <div class="payroll-row">
       <div class="funnel-container">
@@ -508,33 +503,36 @@
         </div>
       </div>
 
-      <div class="projects-container">
-        <div class="projects-title">Upcoming 2025 Retail Projects</div>
-        <ul class="projects-list">
-          <li><span class="number">1)</span> Omni green implementation & full integration between delivery and retail</li>
-          <li><span class="number">2)</span> Electronic Shelf Labeling System</li>
-          <li><span class="number">3)</span> All new customer facing UI, showcasing all Products.</li>
-        </ul>
+      <!-- MOVED: Heatmap now next to Payroll funnel chart -->
+      <div class="heatmap-container">
+        <div class="heatmap-title">Recommended # of DSAs - Rounded (30-min intervals)</div>
+        <div class="heatmap" id="dsaHeatmap">
+          <!-- Headers and cells will be added by JavaScript -->
+        </div>
+        <div class="heatmap-legend">
+          <div class="heatmap-legend-gradient"></div>
+          <div class="heatmap-legend-labels">
+            <span>7</span>
+            <span>9</span>
+            <span>11</span>
+            <span>13</span>
+          </div>
+        </div>
+        <div id="tooltip" class="tooltip"></div>
       </div>
     </div>
   </div>
 
-  <!-- DSA Heatmap Section - MODIFIED to be 70% width and centered -->
-  <div class="heatmap-container">
-    <div class="heatmap-title">Recommended # of DSAs - Rounded (30-min intervals)</div>
-    <div class="heatmap" id="dsaHeatmap">
-      <!-- Headers and cells will be added by JavaScript -->
+  <!-- MOVED: Projects section now below the Payroll and Heatmap row -->
+  <div class="payroll-section">
+    <div class="projects-container" style="width: 100%;">
+      <div class="projects-title">Upcoming 2025 Retail Projects</div>
+      <ul class="projects-list">
+        <li><span class="number">1)</span> Omni green implementation & full integration between delivery and retail</li>
+        <li><span class="number">2)</span> Electronic Shelf Labeling System</li>
+        <li><span class="number">3)</span> All new customer facing UI, showcasing all Products.</li>
+      </ul>
     </div>
-    <div class="heatmap-legend">
-      <div class="heatmap-legend-gradient"></div>
-      <div class="heatmap-legend-labels">
-        <span>7</span>
-        <span>9</span>
-        <span>11</span>
-        <span>13</span>
-      </div>
-    </div>
-    <div id="tooltip" class="tooltip"></div>
   </div>
 </div>
 
